@@ -7,7 +7,7 @@ import { OrbitControls } from "jsm/controls/OrbitControls.js";
 const window_w = window.innerWidth;
 const window_h = window.innerHeight;
 const renderer = new THREE.WebGLRenderer({antialias : true});
-renderer.setSize(window_w,window_h);
+renderer.setSize(window_w, window_h);
 document.body.appendChild(renderer.domElement);
 
 // CAMERA
@@ -29,9 +29,6 @@ camera.position.z = 6;
 class ParticleSystem{
     // CONSTRUCTOR PARAMETERS
     // Amount: Amount of particles to spawn at a time (int)
-    // Radius: Radius of the sphere particle (For now, one day sphere particle will be a subclass of this class along with box particle cylander particle and mesh particle) (float)
-    // Width Segments: WidthSegments of the sphere particle. Think how many polygons the sphere has.
-    // Height Segments: HeightSegments of the sphere particle. Same here as above.
     // Shape: Shape of the particle emission (String: "Orb", "Cone", "Flat")
     // Direcrtion: Direction of the force on the particles (int[3])
     // Force: Force on direction of the particles, with gravity disabled the force will be constant and will act as speed. (float)
@@ -43,11 +40,9 @@ class ParticleSystem{
     // Gravity: Allows particles to fall at a rate proportional to their mass. (boolean)
     // Mass: Mass of the particle, effects force; fall speed as well when gravity is enabled.
 
-    constructor(amount, radius, widthSegments, heightSegments, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass){
+    constructor(amount, geometry, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass){
         this.amount = amount;
-        this.radius = radius;
-        this.widthSegments = widthSegments;
-        this.heightSegments = heightSegments;
+        this.geometry = geometry;
         this.shape = shape;
         this.direction = direction;
         this.force = force * .05;
@@ -131,7 +126,7 @@ class ParticleSystem{
                 particleColorTicker = Math.floor(Math.random()*this.colors.length);
                 particleColor = this.colors[particleColorTicker];
             }
-            particlesInWave.push(new Particle(this.radius, this.widthSegments, this.heightSegments, particleColor));
+            particlesInWave.push(new Particle(this.geometry, particleColor));
             if (this.shape === "Orb"){
                 // Shoot out in all drections
                 let directionalVector = new THREE.Vector3(Math.random()*this.direction[0]-(this.direction[0]/2), Math.random()*this.direction[1]-(this.direction[1]/2), Math.random()*this.direction[2]-(this.direction[2]/2));
@@ -160,15 +155,32 @@ class ParticleSystem{
 
 }
 
+class SphereParticleSystem extends ParticleSystem{
+    constructor(amount, radius, widthSegments, heightSegments, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass) {
+        let sphereGeometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
+        super(amount, sphereGeometry, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass);
+    }
+}
+
+class BoxParticleSystem extends ParticleSystem{
+    constructor(amount, width, height, depth, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass){
+        let boxGeometry = new THREE.BoxGeometry(width, height, depth);
+        super(amount, boxGeometry, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass);
+    }
+}
+
+class CircleParticleSystem extends ParticleSystem{
+    constructor(amount, radius, segments, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass){
+        let circleGeometry = new THREE.CircleGeometry(radius, segments);
+        super(amount, circleGeometry, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass);
+    }
+}
+
 // PARTICLE CLASS
 class Particle{
-    constructor(radius, widthSegments, heightSegments, particleColor){
-        this.radius = radius;
-        this.widthSegments = widthSegments;
-        this.heightSegments = heightSegments;
+    constructor(geometry, particleColor){
+        this.geometry = geometry;
         this.particleColor = particleColor;
-
-        this.geometry = new THREE.SphereGeometry(.02, 8, 8);
         this.material = new THREE.MeshBasicMaterial({color: this.particleColor});
         this.mesh = new THREE.Mesh(this.geometry, this.material);
 
@@ -223,13 +235,19 @@ var timePassed = 0;
 */
 
 // CREATING A PARTICLE SYSTEM
-const ps = new ParticleSystem(100, .3, 8, 8, "Orb", [1, 1, 1], .5, 500, [0x00FFFF, 0xFF0000, 0x8A2BE2, 0x8FBC8F, 0xFF00FF, 0xFFD700], 50, false, true, false, 1);
-ps.Start();
+const ps1 = new SphereParticleSystem(100, .02, 8, 8, "Orb", [1, 1, 1], 2, 500, [0x00CED1, 0x00BFFF, 0x1E90FF, 0x6495ED, 0x00008B], 50, false, true, false, 1);
+const ps2 = new BoxParticleSystem(100, .03, .03, .03, "Orb", [1, 1, 1], .5, 500, [0xDC143C, 0x8B0000, 0xB22222, 0xFF1493, 0x800000, 0xFF0000], 50, false, true, false, 1);
+const ps3 = new CircleParticleSystem(100, .02, 4, "Orb", [1, 1, 1], 1, 500, [0x3CB371, 0x00FA9A, 0x98FB98, 0x2E8B57, 0x00FF7F, 0x98FB98], 50, false, true, false, 1);
+ps1.Start();
+ps2.Start();
+ps3.Start();
 
 // ITS A LOOP
 function animate(t = 0){
 
-    ps.Update();
+    ps1.Update();
+    ps2.Update();
+    ps3.Update();
 
 
 requestAnimationFrame(animate);
