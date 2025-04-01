@@ -2,7 +2,9 @@
 ## For Three.js, in js.
 ## It will be God's shittiest Particle System
 ## 2025.03.05 Chance Hoard
+## V 0.8.0
 
+#### Note: The  `Gradiant` modifier is still inactive, so you won't be able to use it. Just leave it `false`.
 ---
 ---
 ---
@@ -24,8 +26,7 @@
 ---
 ## Parameters:
 #### `Amount (int)` - Controls the amount of particles that spawn per wave.
-#### `shape (String)` - Shape of the emission. Orb, Cone, or Flat.
-#### `direction (int[3])` - Direction the particles will travel (X, Y, Z)
+#### `direction (int[3])` - Direction the particles will travel (X, Y, Z), Use this to play with shape. (1, 1, 1 will make an orb, .5, 2, .5 with gravity makes a fountain.)
 #### `force (float)` - Force on the particles in the system.
 #### `duration (int)` - Number of frames the particles will live.
 #### `colors (0x000000[])` - Colors of the projectiles.
@@ -97,7 +98,6 @@
 #### `Width (float)` - Width of box particle.
 #### `Height (float)` - Height of box particle.
 #### `depth (float)` - Depth of box particle.
-#### `shape (String)` - Shape of the emission. Orb, Cone, or Flat.
 #### `direction (int[3])` - Direction the particles will travel (X, Y, Z)
 #### `force (float)` - Force on the particles in the system.
 #### `duration (int)` - Number of frames the particles will live.
@@ -119,7 +119,6 @@
 #### `Amount (int)` - Controls the amount of particles that spawn per wave.
 #### `Radius (float)` - Radius of the circle particle.
 #### `Segments (int)` - Segments of the circle (more segments = more precice circle.)
-#### `shape (String)` - Shape of the emission. Orb, Cone, or Flat.
 #### `direction (int[3])` - Direction the particles will travel (X, Y, Z)
 #### `force (float)` - Force on the particles in the system.
 #### `duration (int)` - Number of frames the particles will live.
@@ -131,7 +130,7 @@
 #### `mass (float)` - Mass of the particles, effects force and fallspeed if gravity is enabled.
 ---
 ---
-# CLASS 6: Particle
+# CLASS 5: Particle
 ### A container for Three.js `Object3D`
 ---
 ---
@@ -153,4 +152,11 @@
 ---
 # Methods
 ---
-## `update()`
+## `update()` - Updates the state of the particle in the system.
+1. #### Applies current velocity to position
+2. #### Increases particle age.
+---
+## `addForce(x, y, z)` - Adds a force vector to the projectile's current velocity.
+---
+## `changeMaterial(color)` - Changes color material of the projectile.
+---
