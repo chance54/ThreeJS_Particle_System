@@ -1,3 +1,9 @@
+////////////////////////////////////
+// THREE.JS PARTICLE SYSTEM
+// CHANCE HOARD 4/2025
+// V 0.8.0
+////////////////////////////////////
+
 // import from the "import map" (see index.html)
 import * as THREE from "three";
 import { OrbitControls } from "jsm/controls/OrbitControls.js";
@@ -29,8 +35,7 @@ camera.position.z = 6;
 class ParticleSystem{
     // CONSTRUCTOR PARAMETERS
     // Amount: Amount of particles to spawn at a time (int)
-    // Shape: Shape of the particle emission (String: "Orb", "Cone", "Flat")
-    // Direcrtion: Direction of the force on the particles (int[3])
+    // Direcrtion: Direction of the force on the particles. Used to control shape. (int[3])
     // Force: Force on direction of the particles, with gravity disabled the force will be constant and will act as speed. (float)
     // Duration: Lifespan of the particles (int)
     // Colors: Color of the particles; Can be one or many. (0xFormat[])
@@ -40,10 +45,9 @@ class ParticleSystem{
     // Gravity: Allows particles to fall at a rate proportional to their mass. (boolean)
     // Mass: Mass of the particle, effects force; fall speed as well when gravity is enabled.
 
-    constructor(amount, geometry, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass){
+    constructor(amount, geometry, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass){
         this.amount = amount;
         this.geometry = geometry;
-        this.shape = shape;
         this.direction = direction;
         this.force = force * .05;
         this.duration = duration;
@@ -66,6 +70,13 @@ class ParticleSystem{
     Start(){
         this.particles = [];
         this.loopTicker = 0;
+
+        if (this.gradiant){
+            this.gradiantChangeInterval = Math.floor(this.duration / this.colors.length);
+            this.gradiantTicker = 0;
+            this.gradiantColor = 0;
+        }
+
         this.spawnParticles();
     }
 
@@ -79,9 +90,17 @@ class ParticleSystem{
             //console.log(this.loopTicker);
         }
 
+        if (this.gravity){
+            for (let i = 0; i < this.particles.length; i++){
+                let gforce = this.mass * 0.0002;
+                this.particles[i].velocity[1] -= gforce;
+            }
+        }
+
         for (let i = 0; i < this.particles.length; i++){
             this.particles[i].update();
         }
+
 
         // Deleting particles after age has surpassed duration.
 
@@ -96,6 +115,20 @@ class ParticleSystem{
                 scene.remove(this.particles[i].mesh);
             }
             this.particles.splice(0, decayedParticles.length);
+        }
+
+        if (this.gradiant){
+            if (this.gradiantTicker >= this.gradiantChangeInterval && this.gradiantColor < this.colors.length){
+                for (let i = 0; i < this.particles.length; i++){
+                    this.gradiantColor++;
+                    this.gradiantTicker = 0;
+                    this.particles[i].changeMaterial(this.colors[this.gradiantColor]);
+                }
+            }
+            else if (this.gradiantColor >= this.colors.length){
+                this.gradiantColor = 0;
+            }
+            this.gradiantTicker++;
         }
 
         /*
@@ -118,7 +151,7 @@ class ParticleSystem{
         let particleColorTicker = 0;
         let particleColor;
         let particlesInWave = [];
-        if (this.colors.length == 1){
+        if (this.colors.length == 1 || this.gradiant){
             particleColor = this.colors[0];
         }
         for (let i = 0; i < this.amount; i++){
@@ -127,25 +160,15 @@ class ParticleSystem{
                 particleColor = this.colors[particleColorTicker];
             }
             particlesInWave.push(new Particle(this.geometry, particleColor));
-            if (this.shape === "Orb"){
-                // Shoot out in all drections
+
                 let directionalVector = new THREE.Vector3(Math.random()*this.direction[0]-(this.direction[0]/2), Math.random()*this.direction[1]-(this.direction[1]/2), Math.random()*this.direction[2]-(this.direction[2]/2));
                 directionalVector.x *= this.force;
                 directionalVector.y *= this.force;
                 directionalVector.z *= this.force;
                 //console.log(directionalVector);
                 particlesInWave[i].addForce(directionalVector.x, directionalVector.y, directionalVector.z);
-            }
-            else if (this.shape === "Cone"){
-                // Shoots in a cone shape towards direction
-            }
-            else if (this.shape === "Flat"){
-                // Shoots along a flat plane, direction determines what axis, (ex. 1, 0, 1) shoots a plane along the X axis
-            }
-            else{
-                // For custom Shapes
-                alert("Error in Particle System, Shape must be 'Orb', 'Cone', 'Flat'. Custom shapes coming soon.");
-            }
+
+            
             scene.add(particlesInWave[i].mesh);
         }
         for (let i = 0; i < particlesInWave.length; i++){
@@ -156,23 +179,23 @@ class ParticleSystem{
 }
 
 class SphereParticleSystem extends ParticleSystem{
-    constructor(amount, radius, widthSegments, heightSegments, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass) {
+    constructor(amount, radius, widthSegments, heightSegments, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass) {
         let sphereGeometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
-        super(amount, sphereGeometry, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass);
+        super(amount, sphereGeometry, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass);
     }
 }
 
 class BoxParticleSystem extends ParticleSystem{
-    constructor(amount, width, height, depth, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass){
+    constructor(amount, width, height, depth, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass){
         let boxGeometry = new THREE.BoxGeometry(width, height, depth);
-        super(amount, boxGeometry, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass);
+        super(amount, boxGeometry, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass);
     }
 }
 
 class CircleParticleSystem extends ParticleSystem{
-    constructor(amount, radius, segments, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass){
+    constructor(amount, radius, segments, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass){
         let circleGeometry = new THREE.CircleGeometry(radius, segments);
-        super(amount, circleGeometry, shape, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass);
+        super(amount, circleGeometry, direction, force, duration, colors, spawnDelay, gradiant, looping, gravity, mass);
     }
 }
 
@@ -200,6 +223,12 @@ class Particle{
         this.velocity[0] = x;
         this.velocity[1] = y;
         this.velocity[2] = z;
+    }
+
+    changeMaterial(newColor){
+        console.log("helo");
+        this.mesh.material.color.setHex(newColor);
+
     }
 }
 
@@ -235,9 +264,9 @@ var timePassed = 0;
 */
 
 // CREATING A PARTICLE SYSTEM
-const ps1 = new SphereParticleSystem(100, .02, 8, 8, "Orb", [1, 1, 1], 2, 500, [0x00CED1, 0x00BFFF, 0x1E90FF, 0x6495ED, 0x00008B], 50, false, true, false, 1);
-const ps2 = new BoxParticleSystem(100, .03, .03, .03, "Orb", [1, 1, 1], .5, 500, [0xDC143C, 0x8B0000, 0xB22222, 0xFF1493, 0x800000, 0xFF0000], 50, false, true, false, 1);
-const ps3 = new CircleParticleSystem(100, .02, 4, "Orb", [1, 1, 1], 1, 500, [0x3CB371, 0x00FA9A, 0x98FB98, 0x2E8B57, 0x00FF7F, 0x98FB98], 50, false, true, false, 1);
+const ps1 = new SphereParticleSystem(300, .08, 8, 8, [.5, 2, .5], 1, 500, [0x00CED1, 0x00BFFF, 0x1E90FF, 0x6495ED, 0x00008B], 50, false, true, true, 2);
+const ps2 = new BoxParticleSystem(300, .08, .08, .08, [.5, 2, .5], 1, 500, [0xDC143C, 0x8B0000, 0xB22222, 0xFF1493, 0x800000, 0xFF0000], 50, false, true, true, -2);
+const ps3 = new CircleParticleSystem(400, .02, 4, [2, 0, 2], .4, 1000, [0x3CB371, 0x00FA9A, 0x98FB98, 0x2E8B57, 0x00FF7F, 0x98FB98], 50, false, true, false, 1);
 ps1.Start();
 ps2.Start();
 ps3.Start();
